@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LINE発注 - 天よし</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background: #f4f4f4; color: #1a1a1a; font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif; min-height: 100vh; padding-bottom: 110px; }
+        header { background: #ffffff; border-bottom: 2px solid #e0e0e0; padding: 14px 16px 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .h-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        h1 { font-size: 18px; font-weight: 900; color: #1a1a1a; }
+        .tag { font-size: 11px; background: #ff6b35; color: #ffffff; padding: 3px 9px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; }
+        .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 9px 4px; border: 2px solid #e0e0e0; border-radius: 10px; background: #f0f0f0; font-size: 13px; font-weight: 700; color: #999999; cursor: pointer; text-align: center; }
+        .tab.on { background: #ff6b35; color: #ffffff; border-color: #ff6b35; }
+        .prog-row { display: flex; align-items: center; gap: 10px; }
+        .prog-bar { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+        .prog-fill { height: 100%; background: #ff6b35; border-radius: 3px; transition: width .3s; width: 0%; }
+        .prog-lbl { font-size: 12px; color: #999; white-space: nowrap; font-weight: 600; }
+        .main { padding: 0 14px; max-width: 600px; margin: 0 auto; }
+        .page { display: none; }
+        .page.on { display: block; }
+        .cat { margin-top: 18px; }
+        .cat-hd { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; padding: 0 2px; }
+        .cat-icon { font-size: 16px; }
+        .cat-nm { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #999999; }
+        .cat-ct { font-size: 11px; color: #ff6b35; margin-left: auto; font-weight: 700; }
+        .items { display: flex; flex-direction: column; gap: 5px; }
+        .item { display: flex; align-items: center; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 13px 14px; cursor: pointer; gap: 11px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .item.chk { background: #f0fff4; border-color: #86efac; }
+        .cb { width: 24px; height: 24px; border: 2px solid #d0d0d0; border-radius: 7px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f0f0f0; }
+        .item.chk .cb { background: #22c55e; border-color: #22c55e; }
+        .ck { display: none; color: #ffffff; font-size: 14px; font-weight: 900; line-height: 1; }
+        .item.chk .ck { display: block; }
+        .item-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+        .iname { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .item.chk .iname { color: #aaaaaa; text-decoration: line-through; }
+        .qty-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        .qb { width: 28px; height: 28px; background: #f0f0f0; border: 2px solid #e0e0e0; border-radius: 7px; color: #1a1a1a; font-size: 16px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .qv { font-size: 15px; font-weight: 700; min-width: 20px; text-align: center; color: #ff6b35; }
+        .ilast { font-size: 11px; flex-shrink: 0; margin-left: auto; font-weight: 700; white-space: nowrap; }
+        .ilast.d0 { color: #16a34a; } /* 今日 */
+        .ilast.d1 { color: #2563eb; } /* 直近 */
+        .ilast.d2 { color: #ca8a04; } /* 1週間以内 */
+        .ilast.d3 { color: #dc2626; } /* それ以上 */
+        /* 履歴 */
+        .hist-empty { text-align: center; padding: 60px 20px; color: #999; }
+        .hcard { background: #ffffff; border: 2px solid #e0e0e0; border-radius: 14px; margin-top: 14px; overflow: hidden; }
+        .hcard-hd { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-bottom: 1px solid #e0e0e0; background: #f8f8f8; }
+        .hdate { font-weight: 800; font-size: 14px; color: #1a1a1a; }
+        .hchips { display: flex; flex-wrap: wrap; gap: 5px; padding: 11px 14px; }
+        .hchip { background: #fff0eb; color: #ff6b35; border: 1px solid #fcd9c8; border-radius: 20px; padding: 4px 11px; font-size: 12px; font-weight: 700; }
+        .hcard-ft { padding: 10px 14px; border-top: 1px solid #e0e0e0; text-align: right; }
+        .hbtn-del { background: #f0f0f0; color: #999; border: 2px solid #e0e0e0; padding: 9px 18px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        /* ボトムナビ */
+        .bot { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; border-top: 2px solid #e0e0e0; padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 8px; box-shadow: 0 -2px 8px rgba(0,0,0,0.08); }
+        .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 14px; font-weight: 800; cursor: pointer; }
+        .btn-p { background: #ff6b35; color: #ffffff; }
+        .btn-s { background: #f0f0f0; color: #1a1a1a; border: 2px solid #e0e0e0; flex: 0 0 auto; padding: 14px 18px; }
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-10px); background: #1a1a1a; color: #fff; font-weight: 700; font-size: 13px; padding: 11px 22px; border-radius: 22px; opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; }
+        .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+        /* モーダル */
+        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 200; padding: 20px; align-items: flex-end; }
+        .overlay.on { display: flex; }
+        .modal { background: #ffffff; border-radius: 18px; width: 100%; max-width: 560px; margin: 0 auto; overflow: hidden; }
+        .modal-hd { padding: 15px 18px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 15px; font-weight: 800; }
+        .modal-body { padding: 14px 18px; max-height: 50vh; overflow-y: auto; }
+        .preview { background: #f4f4f4; border-radius: 12px; padding: 14px 16px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; border: 1px solid #e0e0e0; color: #1a1a1a; }
+        .modal-ft { padding: 12px 18px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="h-top"><h1>📋 LINE発注</h1><span class="tag">天よし</span></div>
+    <div class="tabs">
+        <button class="tab on" id="tab-order" onclick="switchTab('order')">✏️ 発注</button>
+        <button class="tab" id="tab-hist" onclick="switchTab('hist')">🕐 履歴</button>
+    </div>
+    <div class="prog-row" id="progRow">
+        <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-lbl" id="progLbl">0 / 0</div>
+    </div>
+</header>
+
+<div class="main">
+    <div class="page on" id="page-order"></div>
+    <div class="page" id="page-hist"></div>
+</div>
+
+<div class="bot" id="bot">
+    <button class="btn btn-s" onclick="resetAll()">リセット</button>
+    <button class="btn btn-p" onclick="openLineModal()">📋 送信メッセージ生成</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="modal">
+    <div class="modal">
+        <div class="modal-hd">
+            <div class="modal-title">📱 LINEへコピー</div>
+            <button style="border:none;background:none;font-size:20px;color:#999;" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body"><div class="preview" id="preview"></div></div>
+        <div class="modal-ft">
+            <button class="btn btn-s" onclick="closeModal()">閉じる</button>
+            <button class="btn btn-p" onclick="copyLine()">コピーしてLINEを開く</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 商品データ定義
+    const CATS = [
+        {icon:'🐟',name:'魚・海鮮',items:[
+            {id:'f1',name:'穴子'},{id:'f2',name:'尻尾なし',hasQty:true,min:1,max:10},
+            {id:'f3',name:'タイ'},{id:'f4',name:'イカ'},{id:'f5',name:'イカ明太'},
+            {id:'f6',name:'うなぎ'},{id:'f7',name:'サーモン'},{id:'f8',name:'カキ'},
+            {id:'f9',name:'エビ'},{id:'f10',name:'車海老'},{id:'f11',name:'ホタテ'},
+            {id:'f12',name:'カニ'},{id:'f13',name:'ハモ'},{id:'f14',name:'白子'},{id:'f15',name:'タチウオ'}
+        ]},
+        {icon:'🥩',name:'肉・加工品',items:[
+            {id:'m1',name:'鳥もも'},{id:'m2',name:'牛すじ'},{id:'m3',name:'肉茶そばの肉'},{id:'m5',name:'肉団子'}
+        ]},
+        {icon:'🥦',name:'野菜',items:[
+            {id:'v1',name:'さつまいも',hasQty:true,min:1,max:10},{id:'v2',name:'カボチャ',hasQty:true,min:1,max:10},
+            {id:'v3',name:'まいたけ',hasQty:true,min:1,max:10},{id:'v4',name:'ナス'},{id:'v5',name:'ピーマン'},
+            {id:'v6',name:'ごぼう'},{id:'v7',name:'インゲン'},{id:'v8',name:'オクラ'},
+            {id:'v9',name:'大葉'},{id:'v10',name:'レモン'}
+        ]},
+        {icon:'🥚',name:'卵・乳製品',items:[
+            {id:'e1',name:'温玉',hasQty:true,min:1,max:10},{id:'e2',name:'ゆで卵'},{id:'e4',name:'チーズ'}
+        ]},
+        {icon:'🍜',name:'麺・乾物',items:[
+            {id:'n1',name:'茶そば'},{id:'n2',name:'うどん出汁'},{id:'n7',name:'茶そばタレ'},
+            {id:'n3',name:'いりこ'},{id:'n4',name:'花かつお'},{id:'n5',name:'昆布'},{id:'n6',name:'わかめ'}
+        ]},
+        {icon:'🍶',name:'調味料・タレ',items:[
+            {id:'s1',name:'天つゆのもと',hasQty:true,min:1,max:10},{id:'s2',name:'天丼タレ',hasQty:true,min:1,max:10},
+            {id:'s3',name:'弁当タレ'},{id:'s5',name:'だし醤油'},{id:'s6',name:'大根おろし'},
+            {id:'s11',name:'大根おろし❌'},{id:'s8',name:'米油'},{id:'s9',name:'てんぷら粉'},{id:'s12',name:'赤出汁みそ'}
+        ]},
+        {icon:'🫙',name:'おでん種',items:[
+            {id:'o1',name:'ごぼう天'},{id:'o2',name:'丸天'},{id:'o3',name:'こんにゃく'},
+            {id:'o4',name:'おでん用大根'},{id:'o5',name:'豆腐'},{id:'o6',name:'おでん味噌'}
+        ]},
+        {icon:'🥤',name:'飲み物',items:[
+            {id:'d1',name:'コーラ'},{id:'d2',name:'ジンジャーエール'},{id:'d3',name:'カルピス'},
+            {id:'d4',name:'オレンジジュース'},{id:'d5',name:'炭酸水'},{id:'d6',name:'烏龍茶'},
+            {id:'d7',name:'芋焼酎'},{id:'d8',name:'麦焼酎'}
+        ]},
+        {icon:'🍨',name:'デザート',items:[{id:'sw1',name:'イチゴアイス'}]}
+    ];
+
+    // 2. 状態管理
+    let state = {};
+    const HIST_KEY = 'amayoshi_hist_v1';
+    const LAST_KEY = 'amayoshi_last_v1';
+
+    function initStates() {
+        CATS.forEach(c => {
+            c.items.forEach(it => {
+                state[it.id] = { checked: false, qty: it.min || 1 };
+            });
+        });
+    }
+
+    // 3. 履歴・日付計算
+    function getHistory() { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); }
+    function getLastOrdered() { return JSON.parse(localStorage.getItem(LAST_KEY) || '{}'); }
+
+    function dayDiff(dateStr) {
+        const d = new Date(dateStr); d.setHours(0,0,0,0);
+        const n = new Date(); n.setHours(0,0,0,0);
+        return Math.round((n - d) / 86400000);
+    }
+
+    function getLastLabel(id) {
+        const lastMap = getLastOrdered();
+        if (!lastMap[id]) return null;
+        const diff = dayDiff(lastMap[id]);
+        if (diff === 0) return { text: '今日', cls: 'd0' };
+        if (diff <= 3) return { text: diff + '日前', cls: 'd1' };
+        if (diff <= 7) return { text: diff + '日前', cls: 'd2' };
+        return { text: diff + '日前', cls: 'd3' };
+    }
+
+    // 4. レンダリング
+    function renderOrder() {
+        const el = document.getElementById('page-order');
+        el.innerHTML = '';
+        CATS.forEach((cat, idx) => {
+            const selectedInCat = cat.items.filter(it => state[it.id].checked).length;
+            const catDiv = document.createElement('div');
+            catDiv.className = 'cat';
+            catDiv.innerHTML = `
+                <div class="cat-hd">
+                    <span class="cat-icon">${cat.icon}</span>
+                    <span class="cat-nm">${cat.name}</span>
+                    <span class="cat-ct">${selectedInCat}/${cat.items.length}</span>
+                </div>
+                <div class="items"></div>
+            `;
+            const itemWrap = catDiv.querySelector('.items');
+            cat.items.forEach(item => {
+                const s = state[item.id];
+                const lbl = getLastLabel(item.id);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `item ${s.checked ? 'chk' : ''}`;
+                itemDiv.onclick = () => toggle(item.id);
+
+                let qtyHtml = '';
+                if (item.hasQty) {
+                    qtyHtml = `
+                        <div class="qty-wrap">
+                            <button class="qb" onclick="changeQty(event,'${item.id}',-1)">−</button>
+                            <span class="qv">${s.qty}</span>
+                            <button class="qb" onclick="changeQty(event,'${item.id}',1)">＋</button>
+                        </div>
+                    `;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="cb"><span class="ck">✓</span></div>
+                    <div class="item-info">
+                        <span class="iname">${item.name}</span>
+                        ${qtyHtml}
+                    </div>
+                    ${lbl ? `<span class="ilast ${lbl.cls}">${lbl.text}</span>` : ''}
+                `;
+                itemWrap.appendChild(itemDiv);
+            });
+            el.appendChild(catDiv);
+        });
+        updateProgress();
+    }
+
+    function toggle(id) {
+        state[id].checked = !state[id].checked;
+        renderOrder();
+    }
+
+    function changeQty(e, id, delta) {
+        e.stopPropagation();
+        const itemData = CATS.flatMap(c => c.items).find(i => i.id === id);
+        state[id].qty = Math.min(itemData.max || 99, Math.max(itemData.min || 1, state[id].qty + delta));
+        renderOrder();
+    }
+
+    function updateProgress() {
+        const total = Object.keys(state).length;
+        const checked = Object.values(state).filter(s => s.checked).length;
+        document.getElementById('progFill').style.width = (checked / total * 100) + '%';
+        document.getElementById('progLbl').textContent = `${checked} / ${total}`;
+    }
+
+    function resetAll() {
+        if(!confirm('選択をすべてクリアしますか？')) return;
+        initStates();
+        renderOrder();
+        showToast('リセットしました');
+    }
+
+    // 5. メッセージ生成 & コピー
+    function buildMessage() {
+        const now = new Date();
+        const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
+        const dayNames = ['日','月','火','水','木','金','土'];
+        let msg = `【発注】${dateStr}(${dayNames[now.getDay()]})\n\n`;
+
+        CATS.forEach(cat => {
+            const selected = cat.items.filter(it => state[it.id].checked);
+            if (selected.length > 0) {
+                msg += `▼${cat.name}\n`;
+                selected.forEach(it => {
+                    const s = state[it.id];
+                    msg += `・${it.name}${it.hasQty ? ' ×' + s.qty : ''}\n`;
+                });
+                msg += `\n`;
+            }
+        });
+        msg += `宜しくお願いします🙇`;
+        return msg;
+    }
+
+    function openLineModal() {
+        const anyChecked = Object.values(state).some(s => s.checked);
+        if (!anyChecked) { showToast('商品が選択されていません'); return; }
+        document.getElementById('preview').textContent = buildMessage();
+        document.getElementById('modal').classList.add('on');
+    }
+
+    function closeModal() { document.getElementById('modal').classList.remove('on'); }
+
+    function copyLine() {
+        const text = buildMessage();
+        navigator.clipboard.writeText(text).then(() => {
+            // 履歴保存
+            saveToHistory();
+            showToast('コピーしました！LINEへ移動します');
+            setTimeout(() => {
+                window.location.href = "https://line.me/R/share?text=" + encodeURIComponent(text);
+            }, 800);
+        });
+    }
+
+    function saveToHistory() {
+        const now = new Date();
+        const ymd = now.toISOString().split('T')[0];
+        const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        
+        const selectedItems = [];
+        const lastMap = getLastOrdered();
+
+        CATS.forEach(c => {
+            c.items.forEach(it => {
+                if(state[it.id].checked) {
+                    selectedItems.push({ name: it.name, qty: it.hasQty ? state[it.id].qty : null });
+                    lastMap[it.id] = ymd;
+                }
+            });
+        });
+
+        const hist = getHistory();
+        hist.unshift({ date: ymd, time: time, items: selectedItems });
+        localStorage.setItem(HIST_KEY, JSON.stringify(hist.slice(0, 20))); // 最大20件
+        localStorage.setItem(LAST_KEY, JSON.stringify(lastMap));
+    }
+
+    // 6. タブ切り替え & 履歴表示
+    function switchTab(t) {
+        document.getElementById('tab-order').className = `tab ${t==='order'?'on':''}`;
+        document.getElementById('tab-hist').className = `tab ${t==='hist'?'on':''}`;
+        document.getElementById('page-order').className = `page ${t==='order'?'on':''}`;
+        document.getElementById('page-hist').className = `page ${t==='hist'?'on':''}`;
+        document.getElementById('progRow').style.display = t==='order' ? 'flex' : 'none';
+        document.getElementById('bot').style.display = t==='order' ? 'flex' : 'none';
+        if (t === 'hist') renderHistory();
+    }
+
+    function renderHistory() {
+        const el = document.getElementById('page-hist');
+        const hist = getHistory();
+        if (hist.length === 0) {
+            el.innerHTML = '<div class="hist-empty">履歴がありません</div>';
+            return;
+        }
+        el.innerHTML = hist.map((h, i) => `
+            <div class="hcard">
+                <div class="hcard-hd">
+                    <span class="hdate">${h.date.replace(/-/g,'/')} ${h.time}</span>
+                    <span style="font-size:11px;color:#999;">${h.items.length}品</span>
+                </div>
+                <div class="hchips">
+                    ${h.items.map(it => `<span class="hchip">${it.name}${it.qty ? '×'+it.qty : ''}</span>`).join('')}
+                </div>
+                <div class="hcard-ft">
+                    <button class="hbtn-del" onclick="deleteHist(${i})">削除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function deleteHist(idx) {
+        const hist = getHistory();
+        hist.splice(idx, 1);
+        localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+        renderHistory();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('on');
+        setTimeout(() => t.classList.remove('on'), 2000);
+    }
+
+    // 初期起動
+    initStates();
+    renderOrder();
+</script>
+
+</body>
+</html>
